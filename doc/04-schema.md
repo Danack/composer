@@ -310,7 +310,11 @@ aliases article](articles/aliases.md).
 #### require
 
 Lists packages required by this package. The package will not be installed
-unless those requirements can be met.
+unless those requirements can be met. As well as Composer installable packages,
+you can also list [platform 
+packages](http://getcomposer.org/doc/02-libraries.md#platform-packages)
+such as PHP itself, PHP extensions and some system libraries, which are not
+installed by Composer.
 
 #### require-dev <span>(root-only)</span>
 
