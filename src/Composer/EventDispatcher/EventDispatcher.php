@@ -205,10 +205,6 @@ class EventDispatcher
      */
     protected function checkListenerExpectedEvent($target, Event $event)
     {
-        if (!$event instanceof Script\Event) {
-            return $event;
-        }
-
         try {
             $reflected = new \ReflectionParameter($target, 0);
         } catch (\Exception $e) {
@@ -234,6 +230,12 @@ class EventDispatcher
                 $event->getName(), $event->getComposer(), $event->getIO(), $event->isDevMode(),
                 $event->getPolicy(), $event->getPool(), $event->getInstalledRepo(), $event->getRequest(),
                 $event->getOperations(), $event->getOperation()
+            );
+        }
+        if (!$event instanceof $expected && $expected === 'Composer\Script\Event') {
+            $event = new \Composer\Script\Event(
+                $event->getName(), $event->getComposer(), $event->getIO(), $event->isDevMode(),
+                $event->getArguments(), $event->getFlags()
             );
         }
 

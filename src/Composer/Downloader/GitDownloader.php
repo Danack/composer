@@ -215,7 +215,12 @@ class GitDownloader extends VcsDownloader
      */
     protected function updateToCommit($path, $reference, $branch, $date)
     {
-        $template = 'git checkout %s && git reset --hard %1$s';
+        // This uses the "--" sequence to separate branch from file parameters.
+        //
+        // Otherwise git tries the branch name as well as file name.
+        // If the non-existent branch is actually the name of a file, the file
+        // is checked out.
+        $template = 'git checkout %s -- && git reset --hard %1$s';
         $branch = preg_replace('{(?:^dev-|(?:\.x)?-dev$)}i', '', $branch);
 
         $branches = null;
@@ -242,7 +247,7 @@ class GitDownloader extends VcsDownloader
                 $branch = 'v' . $branch;
             }
 
-            $command = sprintf('git checkout %s', ProcessExecutor::escape($branch));
+            $command = sprintf('git checkout %s --', ProcessExecutor::escape($branch));
             $fallbackCommand = sprintf('git checkout -B %s %s', ProcessExecutor::escape($branch), ProcessExecutor::escape('composer/'.$branch));
             if (0 === $this->process->execute($command, $output, $path)
                 || 0 === $this->process->execute($fallbackCommand, $output, $path)
