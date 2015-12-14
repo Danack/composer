@@ -13,6 +13,10 @@
 namespace Composer\Command;
 
 use Composer\DependencyResolver\Pool;
+use Composer\Package\Link;
+use Composer\Package\PackageInterface;
+use Composer\Repository\ArrayRepository;
+use Composer\Repository\CompositeRepository;
 use Composer\Plugin\CommandEvent;
 use Composer\Plugin\PluginEvents;
 use Symfony\Component\Console\Input\InputInterface;
@@ -57,7 +61,10 @@ EOT
         $commandEvent = new CommandEvent(PluginEvents::COMMAND, 'depends', $input, $output);
         $composer->getEventDispatcher()->dispatch($commandEvent->getName(), $commandEvent);
 
-        $repo = $composer->getRepositoryManager()->getLocalRepository();
+        $repo = new CompositeRepository(array(
+            new ArrayRepository(array($composer->getPackage())),
+            $composer->getRepositoryManager()->getLocalRepository(),
+        ));
         $needle = $input->getArgument('package');
 
         $pool = new Pool();
@@ -81,8 +88,11 @@ EOT
 
         $messages = array();
         $outputPackages = array();
+        $io = $this->getIO();
+        /** @var PackageInterface $package */
         foreach ($repo->getPackages() as $package) {
             foreach ($types as $type) {
+                /** @var Link $link */
                 foreach ($package->{'get'.$linkTypes[$type][0]}() as $link) {
                     if ($link->getTarget() === $needle) {
                         if (!isset($outputPackages[$package->getName()])) {
@@ -96,9 +106,9 @@ EOT
 
         if ($messages) {
             sort($messages);
-            $this->getIO()->write($messages);
+            $io->write($messages);
         } else {
-            $this->getIO()->writeError('<info>There is no installed package depending on "'.$needle.'".</info>');
+            $io->writeError('<info>There is no installed package depending on "'.$needle.'".</info>');
         }
     }
 }

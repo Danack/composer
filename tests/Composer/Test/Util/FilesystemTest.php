@@ -112,6 +112,7 @@ class FilesystemTest extends TestCase
             array('/foo/bar_vendor', '/foo/bar', '../bar', true),
             array('/foo/bar_vendor', '/foo/bar/src', '../bar/src', true),
             array('/foo/bar_vendor/src2', '/foo/bar/src/lib', '../../bar/src/lib', true),
+            array('C:/', 'C:/foo/bar/', "foo/bar", true),
         );
     }
 
@@ -179,6 +180,7 @@ class FilesystemTest extends TestCase
 
     /**
      * @link https://github.com/composer/composer/issues/3157
+     * @requires function symlink
      */
     public function testUnlinkSymlinkedDirectory()
     {
@@ -188,7 +190,6 @@ class FilesystemTest extends TestCase
         @mkdir($basepath . "/real", 0777, true);
         touch($basepath . "/real/FILE");
 
-        $this->skipTestIfSymlinkPhpFunctionIsMissing();
         $result = @symlink($basepath . "/real", $symlinked);
 
         if (!$result) {
@@ -207,6 +208,7 @@ class FilesystemTest extends TestCase
 
     /**
      * @link https://github.com/composer/composer/issues/3144
+     * @requires function symlink
      */
     public function testRemoveSymlinkedDirectoryWithTrailingSlash()
     {
@@ -217,7 +219,6 @@ class FilesystemTest extends TestCase
         $symlinked              = $basepath . "/linked";
         $symlinkedTrailingSlash = $symlinked . "/";
 
-        $this->skipTestIfSymlinkPhpFunctionIsMissing();
         $result = @symlink($basepath . "/real", $symlinked);
 
         if (!$result) {
@@ -238,12 +239,5 @@ class FilesystemTest extends TestCase
         $this->assertTrue($result);
         $this->assertFalse(file_exists($symlinkedTrailingSlash));
         $this->assertFalse(file_exists($symlinked));
-    }
-
-    private function skipTestIfSymlinkPhpFunctionIsMissing()
-    {
-        if (!function_exists('symlink')) {
-            $this->markTestSkipped('The php symlink() function for symbolic links is not available on this platform');
-        }
     }
 }

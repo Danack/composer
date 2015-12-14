@@ -137,8 +137,8 @@ class JsonFile
      * Validates the schema of the current json file according to composer-schema.json rules
      *
      * @param  int                     $schema a JsonFile::*_SCHEMA constant
-     * @return bool                    true on success
      * @throws JsonValidationException
+     * @return bool                    true on success
      */
     public function validateSchema($schema = self::STRICT_SCHEMA)
     {
@@ -182,7 +182,7 @@ class JsonFile
      */
     public static function encode($data, $options = 448)
     {
-        if (version_compare(PHP_VERSION, '5.4', '>=')) {
+        if (PHP_VERSION_ID >= 50400) {
             $json = json_encode($data, $options);
             if (false === $json) {
                 self::throwEncodeError(json_last_error());
@@ -218,7 +218,7 @@ class JsonFile
     /**
      * Throws an exception according to a given code with a customized message
      *
-     * @param int $code return code of json_last_error function
+     * @param  int               $code return code of json_last_error function
      * @throws \RuntimeException
      */
     private static function throwEncodeError($code)
@@ -269,10 +269,10 @@ class JsonFile
      *
      * @param  string                    $json
      * @param  string                    $file
-     * @return bool                      true on success
      * @throws \UnexpectedValueException
      * @throws JsonValidationException
      * @throws ParsingException
+     * @return bool                      true on success
      */
     protected static function validateSyntax($json, $file = null)
     {

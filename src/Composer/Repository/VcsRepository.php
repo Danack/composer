@@ -14,7 +14,7 @@ namespace Composer\Repository;
 
 use Composer\Downloader\TransportException;
 use Composer\Repository\Vcs\VcsDriverInterface;
-use Composer\Package\Version\VersionParser;
+use Composer\Semver\VersionParser;
 use Composer\Package\Loader\ArrayLoader;
 use Composer\Package\Loader\ValidatingArrayLoader;
 use Composer\Package\Loader\InvalidPackageException;
@@ -26,7 +26,7 @@ use Composer\Config;
 /**
  * @author Jordi Boggiano <j.boggiano@seld.be>
  */
-class VcsRepository extends ArrayRepository
+class VcsRepository extends ArrayRepository implements ConfigurableRepositoryInterface
 {
     protected $url;
     protected $packageName;
@@ -43,6 +43,7 @@ class VcsRepository extends ArrayRepository
     {
         $this->drivers = $drivers ?: array(
             'github'        => 'Composer\Repository\Vcs\GitHubDriver',
+            'gitlab'        => 'Composer\Repository\Vcs\GitLabDriver',
             'git-bitbucket' => 'Composer\Repository\Vcs\GitBitbucketDriver',
             'git'           => 'Composer\Repository\Vcs\GitDriver',
             'hg-bitbucket'  => 'Composer\Repository\Vcs\HgBitbucketDriver',
@@ -55,7 +56,7 @@ class VcsRepository extends ArrayRepository
         $this->url = $repoConfig['url'];
         $this->io = $io;
         $this->type = isset($repoConfig['type']) ? $repoConfig['type'] : 'vcs';
-        $this->verbose = $io->isVerbose();
+        $this->verbose = $io->isVeryVerbose();
         $this->config = $config;
         $this->repoConfig = $repoConfig;
     }

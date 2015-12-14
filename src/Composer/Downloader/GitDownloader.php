@@ -13,7 +13,6 @@
 namespace Composer\Downloader;
 
 use Composer\Package\PackageInterface;
-use Composer\Util\GitHub;
 use Composer\Util\Git as GitUtil;
 use Composer\Util\ProcessExecutor;
 use Composer\IO\IOInterface;
@@ -26,6 +25,7 @@ use Composer\Config;
 class GitDownloader extends VcsDownloader
 {
     private $hasStashedChanges = false;
+    private $hasDiscardedChanges = false;
     private $gitUtil;
 
     public function __construct(IOInterface $io, Config $config, ProcessExecutor $process = null, Filesystem $fs = null)
@@ -74,7 +74,7 @@ class GitDownloader extends VcsDownloader
         GitUtil::cleanEnv();
         $path = $this->normalizePath($path);
         if (!is_dir($path.'/.git')) {
-            throw new \RuntimeException('The .git directory is missing from '.$path.', see http://getcomposer.org/commit-deps for more information');
+            throw new \RuntimeException('The .git directory is missing from '.$path.', see https://getcomposer.org/commit-deps for more information');
         }
 
         $ref = $target->getSourceReference();
@@ -82,7 +82,7 @@ class GitDownloader extends VcsDownloader
         $command = 'git remote set-url composer %s && git fetch composer && git fetch --tags composer';
 
         $commandCallable = function ($url) use ($command) {
-            return sprintf($command, ProcessExecutor::escape ($url));
+            return sprintf($command, ProcessExecutor::escape($url));
         };
 
         $this->gitUtil->runCommand($commandCallable, $url, $path);
@@ -150,7 +150,7 @@ class GitDownloader extends VcsDownloader
         }
 
         while (true) {
-            switch ($this->io->ask('    <info>Discard changes [y,n,v,'.($update ? 's,' : '').'?]?</info> ', '?')) {
+            switch ($this->io->ask('    <info>Discard changes [y,n,v,d,'.($update ? 's,' : '').'?]?</info> ', '?')) {
                 case 'y':
                     $this->discardChanges($path);
                     break 2;
@@ -170,6 +170,10 @@ class GitDownloader extends VcsDownloader
                     $this->io->writeError($changes);
                     break;
 
+                case 'd':
+                    $this->viewDiff($path);
+                    break;
+
                 case '?':
                 default:
                     help:
@@ -177,6 +181,7 @@ class GitDownloader extends VcsDownloader
                         '    y - discard changes and apply the '.($update ? 'update' : 'uninstall'),
                         '    n - abort the '.($update ? 'update' : 'uninstall').' and let you manually clean things up',
                         '    v - view modified files',
+                        '    d - view local modifications (diff)',
                     ));
                     if ($update) {
                         $this->io->writeError('    s - stash changes and try to reapply them after the update');
@@ -200,27 +205,30 @@ class GitDownloader extends VcsDownloader
                 throw new \RuntimeException("Failed to apply stashed changes:\n\n".$this->process->getErrorOutput());
             }
         }
+
+        $this->hasDiscardedChanges = false;
     }
 
     /**
      * Updates the given path to the given commit ref
      *
-     * @param  string      $path
-     * @param  string      $reference
-     * @param  string      $branch
-     * @param  \DateTime   $date
-     * @return null|string if a string is returned, it is the commit reference that was checked out if the original could not be found
-     *
+     * @param  string            $path
+     * @param  string            $reference
+     * @param  string            $branch
+     * @param  \DateTime         $date
      * @throws \RuntimeException
+     * @return null|string       if a string is returned, it is the commit reference that was checked out if the original could not be found
      */
     protected function updateToCommit($path, $reference, $branch, $date)
     {
+        $force = $this->hasDiscardedChanges || $this->hasStashedChanges ? '-f ' : '';
+
         // This uses the "--" sequence to separate branch from file parameters.
         //
         // Otherwise git tries the branch name as well as file name.
         // If the non-existent branch is actually the name of a file, the file
         // is checked out.
-        $template = 'git checkout %s -- && git reset --hard %1$s';
+        $template = 'git checkout '.$force.'%s -- && git reset --hard %1$s --';
         $branch = preg_replace('{(?:^dev-|(?:\.x)?-dev$)}i', '', $branch);
 
         $branches = null;
@@ -234,7 +242,7 @@ class GitDownloader extends VcsDownloader
             && $branches
             && preg_match('{^\s+composer/'.preg_quote($reference).'$}m', $branches)
         ) {
-            $command = sprintf('git checkout -B %s %s && git reset --hard %2$s', ProcessExecutor::escape($branch), ProcessExecutor::escape('composer/'.$reference));
+            $command = sprintf('git checkout '.$force.'-B %s %s -- && git reset --hard %2$s --', ProcessExecutor::escape($branch), ProcessExecutor::escape('composer/'.$reference));
             if (0 === $this->process->execute($command, $output, $path)) {
                 return;
             }
@@ -248,11 +256,11 @@ class GitDownloader extends VcsDownloader
             }
 
             $command = sprintf('git checkout %s --', ProcessExecutor::escape($branch));
-            $fallbackCommand = sprintf('git checkout -B %s %s', ProcessExecutor::escape($branch), ProcessExecutor::escape('composer/'.$branch));
+            $fallbackCommand = sprintf('git checkout '.$force.'-B %s %s --', ProcessExecutor::escape($branch), ProcessExecutor::escape('composer/'.$branch));
             if (0 === $this->process->execute($command, $output, $path)
                 || 0 === $this->process->execute($fallbackCommand, $output, $path)
             ) {
-                $command = sprintf('git reset --hard %s', ProcessExecutor::escape($reference));
+                $command = sprintf('git reset --hard %s --', ProcessExecutor::escape($reference));
                 if (0 === $this->process->execute($command, $output, $path)) {
                     return;
                 }
@@ -311,6 +319,8 @@ class GitDownloader extends VcsDownloader
         if (0 !== $this->process->execute('git reset --hard', $output, $path)) {
             throw new \RuntimeException("Could not reset changes\n\n:".$this->process->getErrorOutput());
         }
+
+        $this->hasDiscardedChanges = true;
     }
 
     /**
@@ -320,11 +330,25 @@ class GitDownloader extends VcsDownloader
     protected function stashChanges($path)
     {
         $path = $this->normalizePath($path);
-        if (0 !== $this->process->execute('git stash', $output, $path)) {
+        if (0 !== $this->process->execute('git stash --include-untracked', $output, $path)) {
             throw new \RuntimeException("Could not stash changes\n\n:".$this->process->getErrorOutput());
         }
 
         $this->hasStashedChanges = true;
+    }
+
+    /**
+     * @param $path
+     * @throws \RuntimeException
+     */
+    protected function viewDiff($path)
+    {
+        $path = $this->normalizePath($path);
+        if (0 !== $this->process->execute('git diff HEAD', $output, $path)) {
+            throw new \RuntimeException("Could not view diff\n\n:".$this->process->getErrorOutput());
+        }
+
+        $this->io->writeError($output);
     }
 
     protected function normalizePath($path)
