@@ -67,8 +67,8 @@ class ClassLoader
     }
 
     /**
-     * Set the different modes that Composer should use to search for files,
-     * and their order for example:
+     * Set the search modes that Composer should use to search for files,
+     * and the order to be used in. For example:
      * $classLoader->setSearchModes([
      *     ClassLoader::SEARCHMODE_OPCACHE,
      *     ClassLoader::SEARCHMODE_FILE
