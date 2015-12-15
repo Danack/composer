@@ -73,22 +73,22 @@ class ClassLoader
      *     ClassLoader::SEARCHMODE_OPCACHE,
      *     ClassLoader::SEARCHMODE_FILE
      * ]);
-     * @param array $newSearchModes
+     * @param array $searchModes
      */
-    public function setSearchModes(array $newSearchModes)
+    public function setSearchModes(array $searchModes)
     {
-        $newSearchModesFiltered = []; 
-        foreach ($newSearchModes as $newSearchMode) {
-            if ($newSearchMode === self::SEARCHMODE_OPCACHE &&
+        $searchModesFiltered = []; 
+        foreach ($searchModes as $searchMode) {
+            if ($searchMode === self::SEARCHMODE_OPCACHE &&
                 function_exists('opcache_is_script_cached') === true) {
-                $newSearchModesFiltered[] = $newSearchMode;
+                $newSearchModesFiltered[] = $searchMode;
             }
             else {
-                $newSearchModesFiltered[] = $newSearchMode;
+                $newSearchModesFiltered[] = $searchMode;
             }
         }
 
-        $this->searchModes = $newSearchModesFiltered;
+        $this->searchModes = $searchModesFiltered;
     }
 
     public function getPrefixes()
