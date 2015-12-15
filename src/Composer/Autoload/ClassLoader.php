@@ -77,7 +77,7 @@ class ClassLoader
      */
     public function setSearchModes(array $searchModes)
     {
-        $searchModesFiltered = []; 
+        $searchModesFiltered = array(); 
         foreach ($searchModes as $searchMode) {
             if ($searchMode === self::SEARCHMODE_OPCACHE &&
                 function_exists('opcache_is_script_cached') === true) {
@@ -87,7 +87,6 @@ class ClassLoader
                 $newSearchModesFiltered[] = $searchMode;
             }
         }
-
         $this->searchModes = $searchModesFiltered;
     }
 
