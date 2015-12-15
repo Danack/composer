@@ -13,14 +13,14 @@ class ComposerAutoloaderInitTargetDir
         }
     }
 
-    public static function getLoader($enableOpcacheOptimize = false)
+    public static function getLoader()
     {
         if (null !== self::$loader) {
             return self::$loader;
         }
 
         spl_autoload_register(array('ComposerAutoloaderInitTargetDir', 'loadClassLoader'), true, true);
-        self::$loader = $loader = new \Composer\Autoload\ClassLoader($enableOpcacheOptimize);
+        self::$loader = $loader = new \Composer\Autoload\ClassLoader();
         spl_autoload_unregister(array('ComposerAutoloaderInitTargetDir', 'loadClassLoader'));
 
         $map = require __DIR__ . '/autoload_namespaces.php';

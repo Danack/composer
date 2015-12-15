@@ -532,7 +532,7 @@ EOF;
 
 require_once $vendorPathToTargetDirCode . '/autoload_real.php';
 
-return ComposerAutoloaderInit$suffix::getLoader(defined('COMPOSER_OPCACHE_OPTIMIZE') && COMPOSER_OPCACHE_OPTIMIZE);
+return ComposerAutoloaderInit$suffix::getLoader();
 
 AUTOLOAD;
     }
@@ -555,14 +555,14 @@ class ComposerAutoloaderInit$suffix
         }
     }
 
-    public static function getLoader(\$enableOpcacheOptimize = false)
+    public static function getLoader()
     {
         if (null !== self::\$loader) {
             return self::\$loader;
         }
 
         spl_autoload_register(array('ComposerAutoloaderInit$suffix', 'loadClassLoader'), true, $prependAutoloader);
-        self::\$loader = \$loader = new \\Composer\\Autoload\\ClassLoader(\$enableOpcacheOptimize);
+        self::\$loader = \$loader = new \\Composer\\Autoload\\ClassLoader();
         spl_autoload_unregister(array('ComposerAutoloaderInit$suffix', 'loadClassLoader'));
 
 

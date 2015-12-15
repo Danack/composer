@@ -56,27 +56,30 @@ class ClassLoader
 
     private $classMapAuthoritative = false;
 
-    const SEARCHMODE_OPCACHE = 0;
     const SEARCHMODE_FILE = 1;
+    const SEARCHMODE_OPCACHE = 2;
     
-    public function __construct($enableOpcacheOptimize = false)
+    public function __construct()
     {
         $this->searchModes = array(
             self::SEARCHMODE_FILE
         );
-
-        if ($enableOpcacheOptimize == false) {
-            return;
+    }
+    
+    public function setSearchModes($newSearchModes)
+    {
+        $newSearchModesFiltered = []; 
+        foreach ($newSearchModes as $newSearchMode) {
+            if ($newSearchMode === self::SEARCHMODE_OPCACHE&&
+                function_exists('opcache_is_script_cached') == true) {
+                $newSearchModesFiltered[] = $newSearchMode;
+            }
+            else {
+                $newSearchModesFiltered[] = $newSearchMode;
+            }
         }
-        if (function_exists('opcache_is_script_cached') == false) {
-            //todo - should a warning be generated?
-            return;
-        }
 
-        $this->searchModes = array(
-            self::SEARCHMODE_OPCACHE,
-            self::SEARCHMODE_FILE,
-        );
+        $this->searchModes = $newSearchModesFiltered;
     }
 
     public function getPrefixes()
