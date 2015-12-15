@@ -65,13 +65,22 @@ class ClassLoader
             self::SEARCHMODE_FILE
         );
     }
-    
-    public function setSearchModes($newSearchModes)
+
+    /**
+     * Set the different modes that Composer should use to search for files,
+     * and their order for example:
+     * $classLoader->setSearchModes([
+     *     ClassLoader::SEARCHMODE_OPCACHE,
+     *     ClassLoader::SEARCHMODE_FILE
+     * ]);
+     * @param array $newSearchModes
+     */
+    public function setSearchModes(array $newSearchModes)
     {
         $newSearchModesFiltered = []; 
         foreach ($newSearchModes as $newSearchMode) {
-            if ($newSearchMode === self::SEARCHMODE_OPCACHE&&
-                function_exists('opcache_is_script_cached') == true) {
+            if ($newSearchMode === self::SEARCHMODE_OPCACHE &&
+                function_exists('opcache_is_script_cached') === true) {
                 $newSearchModesFiltered[] = $newSearchMode;
             }
             else {
